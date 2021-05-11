@@ -2,7 +2,7 @@
 # Name: Jonatan Gracias
 # Project Title: Maze Game
 # Project Desciption: Find way to target in a randomly generated maze.
-
+# work in progess
 # basic setup for pygame
 
 import pygame, sys
