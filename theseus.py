@@ -113,8 +113,8 @@ class Theseus(pygame.sprite.Sprite):
                     self.rect.x, self.rect.y = cfg.clio[x, y]                               # player in char dict
                     char[self.name] = {'xy':(self.rect.x, self.rect.y), 'Theseus': True}
                     if self.name == 'Minotaur':                                             # if the minotaur is following player
-                        cfg.minotaurspeed = 250                                             # NPC speed increases (Issue player lags NPCs)
-                        cfg.companionspeed = 150
+                        cfg.minotaurspeed = 500                                             # NPC speed increases (Issue player lags NPCs)
+                        cfg.companionspeed = 250
                     pygame.display.update()
 
 
@@ -150,10 +150,13 @@ class Theseus(pygame.sprite.Sprite):
             pygame.display.update()
 
 
+    # Timeout---------------------------------------------------------------------------------------------------------
+    def timeout(self):
+        char[self.name] = {'xy':(self.rect.x, self.rect.y), 'Theseus': False}
     # Check if character is alive-------------------------------------------------------------------------------------
     def check_alive():                                              # not finished but basically will track what player has
         if char['Minotaur']['xy'] == char['Theseus']['xy']:         # if player is at minotaur
-            if char['Companion']['Theseus']:                        # if player is with companion
+            if char['Companion']['Theseus'] == True:                        # if player is with companion
                 print('Minotaur is dead')                           # minotaur dies
             else:
                 print('you are dead')                               # else player dies

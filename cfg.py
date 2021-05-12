@@ -28,7 +28,7 @@ FPS = 60
 FPSCLOCK = pygame.time.Clock()
 
 # Grid information----------------------------------------------------------------------------------------------
-cellNum = 10
+cellNum = 20
 cellSize = int(BGSIZE / cellNum ) - WALLSIZE
 xs, ys = 0, 0
 xe, ye = 0, 0
@@ -45,7 +45,7 @@ chrono = cellNum * 7
 clio = {}
 minotaurVisited = []
 companionVisited = []
-minotaurspeed = 500
+minotaurspeed = 1000
 companionspeed = 500
 
 

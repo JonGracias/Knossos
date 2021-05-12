@@ -55,7 +55,7 @@ def main():
     # Timer------------------------------------------------------------------------------------
     start_ticks=pygame.time.get_ticks() #starter tick
     font = pygame.font.Font('freesansbold.ttf', cfg.BASICFONTSIZE)
-    te = 0
+    te = cfg.chrono
     time_surf = pygame.Surface((54, 20))
     time_surf.fill(cfg.YELLOW)
     run = False
@@ -87,9 +87,12 @@ def main():
     # User Events--------------------------------------------------------------------------------------------------
     minotaur_move_event = pygame.USEREVENT + 1
     companion_move_event = pygame.USEREVENT + 2
+    time_event = pygame.USEREVENT + 3
+    
     pygame.time.set_timer(minotaur_move_event, cfg.minotaurspeed)
     pygame.time.set_timer(companion_move_event, cfg.companionspeed)
-
+    pygame.time.set_timer(time_event, 1000)
+    
     # Run Game------------------------------------------------------------------------------------------------------
     running = True
     while running:
@@ -103,19 +106,6 @@ def main():
         if run == True:
             sprites.update()
             sprites.draw(DISPLAYSURF)
-
-            #timer (Issue time is longer than 60secs)
-            seconds=(pygame.time.get_ticks()-start_ticks)/1000   #calculate how many seconds
-            te -= 1
-            text_Surf = font.render(time.strftime('%M:%S', time.gmtime(te)), True, cfg.WHITE, cfg.RED)
-            time_surf.blit(text_Surf, [0, 0])
-            DISPLAYSURF.blit(time_surf, [cfg.LOC + 165, 14])
-
-            if seconds>cfg.chrono: # if more than 60 seconds end round
-                run = False
-                start_ticks=pygame.time.get_ticks() #starter tick
-                lives += 1
-
             #  movement and key events
             for event in pygame.event.get():
                 pygame.time.set_timer(minotaur_move_event, cfg.minotaurspeed)
@@ -123,8 +113,21 @@ def main():
                 # NPC movement (Issue---NPCs do not move while player is moving and being drawn)
                 if event.type == minotaur_move_event:
                     tminotaur.minotaurMovement(DISPLAYSURF)# enemy
-                if event.type == minotaur_move_event:
+                elif event.type == companion_move_event:
                     tcompanion1.compMovement(DISPLAYSURF)# companion
+                elif event.type == time_event:
+                    if run == True:
+                        te -= 1
+                        text_Surf = font.render(time.strftime('%M:%S', time.gmtime(te)), True, cfg.WHITE, cfg.RED)
+                        time_surf.blit(text_Surf, [0, 0])
+                        DISPLAYSURF.blit(time_surf, [cfg.LOC + 165, 14])
+                        if te == 0: # if more than 60 seconds end round
+                            te = cfg.chrono
+                            tplayer.rect.x, tplayer.rect.y = cfg.xe, cfg.ye
+                            cfg.clio.clear()
+                            tminotaur.timeout()
+                            tcompanion1.timeout()
+                            run = False
                 elif event.type == KEYDOWN:
                     # player movement
                     if event.key in (K_LEFT, K_a):
@@ -135,36 +138,29 @@ def main():
                         tplayer.moveUp(DISPLAYSURF)
                     elif event.key in (K_DOWN, K_s):
                         tplayer.moveDown(DISPLAYSURF)
-                    # restart    
-                    elif event.key == K_SPACE:
-                        tplayer.rect.x = cfg.xe
-                        tplayer.rect.y = cfg.ye
-                        lives = 0
-                        cfg.clio.clear()
                     # show answer
                     elif event.key == K_3: 
                         daeda.goal(DISPLAYSURF)
-
-         
-        # menu
-        for event in pygame.event.get():
-            if event.type == KEYDOWN:
-                if event.key == K_0:# settings
-                    pass
-                elif event.key == K_1:# new level
-                    new()
-                elif event.key == K_2: # restart
-                    tplayer.rect.x = cfg.xe
-                    tplayer.rect.y = cfg.ye
-                    lives = 0
-                    cfg.clio.clear()
-                elif event.key == K_3:# show asnwer
-                    daeda.goal(DISPLAYSURF)
-                elif event.key == K_SPACE:# start level
-                    run = True
-            elif event.type == QUIT:
-                pygame.quit()
-                sys.exit()
+                    elif event.key == K_0:# settings
+                        pass
+                    elif event.key == K_1:# new level
+                        new()
+                    elif event.key == K_2: # restart
+                        tplayer.rect.x = cfg.xe
+                        tplayer.rect.y = cfg.ye
+                        cfg.clio.clear()
+                    elif event.key == K_3:# show asnwer
+                        daeda.goal(DISPLAYSURF)
+                    elif event.key == K_SPACE:# start level
+                        run = False
+        else:
+            for event in pygame.event.get():
+                    if event.type == KEYDOWN:
+                        if event.key == K_SPACE:# start level
+                            run = True
+                    elif event.type == QUIT:
+                        pygame.quit()
+                        sys.exit()
 
         # check if alive
         Theseus.check_alive()
