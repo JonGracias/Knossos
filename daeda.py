@@ -20,7 +20,8 @@ def renderGrid(DISPLAYSURF):                                                    
     
     for j in range(cfg.cellNum):
         for h in range(cfg.cellNum):
-            pygame.draw.rect(DISPLAYSURF, cfg.DARKBLUE,
+            color = random.choice(cfg.COLOR_LIST)
+            pygame.draw.rect(DISPLAYSURF, color,
             pygame.Rect(x[j], y[h], cfg.cellSize, cfg.cellSize))
 
 
@@ -90,7 +91,7 @@ def daedalus(DISPLAYSURF):                                                      
 
 # Finds the fastest route using cfg.solution{}-------------------------------------------------------------------------
 def goal(DISPLAYSURF):                                              # draws path to goal
-    colors = [(cfg.LIMEGREEN), (cfg.BLACK)]                         
+    colors = [(random.choice(cfg.COLOR_LIST)), (cfg.BLACK)]                         
     emx = cfg.xe
     emy = cfg.ye
     for i in range(2):                                              # draws it twice once green other black
