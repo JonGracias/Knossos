@@ -54,10 +54,10 @@ class Screen():
             self.screen.blit(s, (10, 35))
             self.screen.blit(PAUSED_SURF, [267, 320])
 
-    def update_screen(self, maze, position, player, target, swords, enemy_swords,
+    def update_screen(self, maze, player, target, swords, enemy_swords,
                       level, score, lives, timer, pause, enemies, chasing_enemies):
         self.refresh_background()
-        maze.renderGrid(self.screen, position)
+        maze.renderGrid(self.screen)
         self.draw_enemies(enemies)
         self.draw_enemies(chasing_enemies)
         self.draw_player(player)

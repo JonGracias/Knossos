@@ -24,7 +24,7 @@ def main():
                 if menu.time_button.collidepoint(pos):
                     print("time")
                 if menu.adv_button.collidepoint(pos):
-                    print("adventure")
+                    start.main()
                 if menu.dark_button.collidepoint(pos):
                     print("dark")
 

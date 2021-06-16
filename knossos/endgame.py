@@ -44,19 +44,19 @@ class EndGame():
 
 class Lost(EndGame):
     def __init__(self, fontsize=18, text="Level: " + str(0), surfx=0, surfy=0, width=100, height=100,
-                 fontx=0, fonty=0, fcolor=c.redframe, bcolor=c.background):
+                 fontx=0, fonty=0, fcolor=c.fRed, bcolor=c.bRed):
         super().__init__(fontsize, text, surfx, surfy,
                          width, height, fontx, fonty, fcolor, bcolor)
 
 
 class Won(EndGame):
     def __init__(self, fontsize=18, text="Level: " + str(0), surfx=0, surfy=0, width=100,
-                 height=100, fontx=0, fonty=0, fcolor=c.greenframe, bcolor=c.background):
+                 height=100, fontx=0, fonty=0, fcolor=c.fGreen, bcolor=c.bGreen):
         super().__init__(fontsize, text, surfx, surfy,
                          width, height, fontx, fonty, fcolor, bcolor)
 
 class Start(EndGame):
     def __init__(self, fontsize=18, text="Welcome", surfx=0, surfy=0, width=100,
-                 height=100, fontx=0, fonty=0, fcolor=c.greenframe, bcolor=c.background):
+                 height=100, fontx=0, fonty=0, fcolor=c.fBlue, bcolor=c.bBlue):
         super().__init__(fontsize, text, surfx, surfy,
                          width, height, fontx, fonty, fcolor, bcolor)

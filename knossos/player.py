@@ -18,7 +18,7 @@ class Player():
         IMAGE_SURF.fill(c.transparent)
 
         IMAGE_SURF.blit(self.image, [self.ix, self.iy])
-        screen.blit(IMAGE_SURF, [self.x + 10, self.y + 30])
+        screen.blit(IMAGE_SURF, [self.x + 5, self.y + 30])
 
 
 

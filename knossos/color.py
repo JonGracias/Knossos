@@ -28,9 +28,19 @@ class colors:
     background = (0,0,0,135)
 
     redframe = (255,0,0,100)
-
-
     greenframe = (0,255,0,100)
+
+    fRed = (128, 0, 0, 80)
+    fGreen = (0, 128, 0, 80)
+    fBlue = (76, 83, 101, 80)
+
+    bRed = (8, 0, 0, 150)
+    bGreen = (0, 8, 0, 150)
+    bBlue = (0, 0, 8, 150)
+
+
+
+
     transparent = (255,255,255,0)
 
 

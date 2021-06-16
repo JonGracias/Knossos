@@ -21,7 +21,6 @@ class Game():
         self.wall = self.aMaze.wall
         self.cell = self.aMaze.cell
         x, y = self.aMaze.grid[0]
-        self.position = [0,0]
 
         # Scoreboard resources---------------------------------
         self.timer = Timer()
@@ -391,7 +390,7 @@ class Game():
         self.up_date_highscore()
 
     def update_screen(self):
-        self.screen.update_screen(self.aMaze, self.position, self.player,
+        self.screen.update_screen(self.aMaze, self.player,
                                   self.target, self.sword_list, self.enemy_sword_list,
                                   self.level, self.score, self.lives, self.timer, self.PAUSED,
                                   self.enemy_list, self.enemy_chasing_list)

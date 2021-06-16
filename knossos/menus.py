@@ -38,8 +38,8 @@ class Menu():
         self.highscore = Start(40, "HighScore   " + str(self.highscore),
                           115,    555,     380,      70,      10,     10)
 
-        self.color = colors.BLACK
-        self.maze = daeda(20)
+        self.color = colors.DARKBLUE
+        self.maze = daeda(15)
         self.time_button = self.timetrial.RECT
         self.adv_button = self.adventure.RECT
         self.dark_button = self.dark.RECT
@@ -95,7 +95,7 @@ class GameOver():
         self.main_menu = Lost(40, "Quit",
                           110,    505,     400,      70,      10,     10)
         self.color = colors.RED
-        self.maze = daeda(20)
+        self.maze = daeda(15)
 
         self.retry_button = self.retry.RECT
         self.main_menu_button = self.main_menu.RECT
@@ -130,8 +130,8 @@ class Win():
                               110,    435,     400,      70,      10,     10)
         self.main_menu = Won(40, "Quit",
                           110,    505,     400,      70,      10,     10)
-        self.color = colors.RED
-        self.maze = daeda(20)
+        self.color = colors.GREEN
+        self.maze = daeda(15)
 
         self.continue_button = self.next_level.RECT
         self.retry_button = self.retry.RECT
