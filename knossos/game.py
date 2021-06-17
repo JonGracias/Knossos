@@ -3,6 +3,7 @@ from knossos.scoreboard import Level, Score, HighScore, Lives
 from knossos.daedalus import daeda
 from knossos.screen import Screen
 from knossos.timer import Timer
+from knossos.maze import Maze
 import knossos.score_data as sd
 from knossos.score_data import Levels
 import random
@@ -18,9 +19,11 @@ class Game():
         self.set_maze()
         self.lvl, self.cells = Levels.levels[0]
         self.aMaze = daeda(self.cells)
+        self.maze = self.aMaze.mazemap
         self.wall = self.aMaze.wall
         self.cell = self.aMaze.cell
         x, y = self.aMaze.grid[0]
+        self.maze_list = []
 
         # Scoreboard resources---------------------------------
         self.timer = Timer()
@@ -41,13 +44,14 @@ class Game():
         self.target = Target(tx, ty, self.cell, self.cell)
         self.set_target_imagex()
         self.sword_list = []
-        self.enemy_sword_list = []
         self.wall_cell = self.wall + self.cell
         self.pose = True
         self.player_strike = False
+        self.player_facing_left = [(-70, 0), (-105, 0)]
 
        # Enemy resources------------------------
         self.enemy_list = []
+        self.enemy_sword_list = []
         self.enemy_chasing_list = []
         self.enemy_dead = []
         self.following = {}
@@ -60,6 +64,7 @@ class Game():
         self.enemy_strike = False
 
         self.PAUSED = False
+        self.rooms()
         self.enemies()
         self.display_level()
     # DATA----------------------------------------------------------------
@@ -103,10 +108,21 @@ class Game():
         sd.Score_Data(0, 000000, self.current_highscore)
         sd.Score_Data(self.lvl, self.current_score, self.current_highscore)
 
+    # Maze rooms---------------------------------------------------------------------------
+    def rooms(self):
+        for value in self.maze:
+            x, y, width, height = value
+            self.room = Maze(x, y, width, height)
+            self.maze_list.append(self.room)
+
+    def move_maze(self):
+        for room in self.maze_list:
+            room.x += 1
+
     # Swords-------------------------------------------------------------------------------
     def swords(self, toward):
         x, y = self.player.x, self.player.y
-        #        |    wx / wy        |          x            |         y          |          sizex          |             sizey       |direction| ix | iy |
+        #        |    wx / wy        |          x            |         y          |          width          |             hieght       |direction| ix | iy |
         sword = {(x - (self.wall), y): ((x - self.wall_cell),         y          ,(self.cell*2) + self.wall,           self.cell     ,"left"   , -70, -70 ,),
                  (x + (self.cell), y): (       x            ,         y          ,(self.cell*2) + self.wall,           self.cell     ,"right"  ,  0 , -70 ,),
                  (x, y - (self.wall)): (       x            ,(y - self.wall_cell),         self.cell       ,(self.cell*2) + self.wall,"up"     , -35, -100,),
@@ -114,16 +130,16 @@ class Game():
 
         for key, value in sword.items():
             wx, wy, = key
-            x, y, sizex, sizey, direction, ix, iy = value
-            if (wx, wy) in self.aMaze.andron and direction == toward:
-                self.sword = Sword(x, y, sizex, sizey, ix, iy)
+            x, y, width, hieght, direction, ix, iy = value
+            if direction == toward:
+                self.sword = Sword(x, y, width, hieght, ix, iy)
                 self.sword_list.append(self.sword)
                 self.player_strike = True
 
 
     def enemy_swords(self, enemy):
         x, y = enemy.x, enemy.y
-        #        |                  dx / dy                  | ix |  iy |        wx      |        wy      |          x          |           y         |           sizex            |              sizey          |
+        #        |                  dx / dy                  | ix |  iy |        wx      |        wy      |          x          |           y         |           width            |              hieght          |
         sword = {(x - (self.wall_cell), y)                   :(-70, -70 , (x - self.wall),  y             , (x - self.wall_cell),  y                  , ((self.cell*2) + self.wall),  self.cell)                 ,
                  (x + (self.wall_cell), y)                   :( 0 , -70 , (x + self.cell),  y             ,  x                  ,  y                  , ((self.cell*2) + self.wall),  self.cell)                 ,
                  (x,                    y - (self.wall_cell)):(-35, -100,  x             , (y - self.wall),  x                  , (y - self.wall_cell),   self.cell                , ((self.cell*2) + self.wall)),
@@ -131,9 +147,9 @@ class Game():
 
         for key, value in sword.items():
             dx, dy, = key
-            ix, iy, wx, wy, x, y, sizex, sizey = value
+            ix, iy, wx, wy, x, y, width, hieght = value
             if (dx, dy) == (self.player.x, self.player.y) and (wx, wy) in self.aMaze.andron:
-                self.enemy_sword = Enemy_Sword(x, y, sizex, sizey, ix, iy)
+                self.enemy_sword = Enemy_Sword(x, y, width, hieght, ix, iy)
                 self.enemy_sword_list.append(self.enemy_sword)
                 self.enemy_strike = True
 
@@ -186,7 +202,7 @@ class Game():
         for value in self.aMaze.enemy_loc:
             x, y = value
             self.enemy = Enemy(x, y, self.cell, self.cell)
-            self.enemy_list.append(self.enemy)
+            #self.enemy_list.append(self.enemy)
 
     # Partrolling Enemies----------------------------------------------------------
     # Checks if enemy is in a position where the player has been before,
@@ -338,11 +354,13 @@ class Game():
                 self.player.ix, self.player.iy = facing["attack_down"][0]
 
     def player_left(self):
-        if (self.player.x - self.wall, self.player.y) in self.aMaze.andron:
-            self.player.x = self.player.x - (self.wall_cell)
-            self.player.y = self.player.y
-            self.pose = not self.pose
-
+        for room in self.maze_list:
+            if room.RECT.collidepoint(self.player.x - 5, self.player.y):
+                self.player.x -= 5
+                self.player.y = self.player.y
+        self.player.ix, self.player.iy = self.player_facing_left[0]
+        self.player_facing_left.append(self.player_facing_left.pop(0))
+        
     def player_right(self):
         if (self.player.x + self.cell, self.player.y) in self.aMaze.andron:
             self.player.x = self.player.x + (self.wall_cell)
@@ -390,7 +408,7 @@ class Game():
         self.up_date_highscore()
 
     def update_screen(self):
-        self.screen.update_screen(self.aMaze, self.player,
+        self.screen.update_screen(self.maze_list, self.player,
                                   self.target, self.sword_list, self.enemy_sword_list,
                                   self.level, self.score, self.lives, self.timer, self.PAUSED,
                                   self.enemy_list, self.enemy_chasing_list)

@@ -122,7 +122,6 @@ def main():
                         towards = "down"
                         GAME.player_down()
                     GAME.enemy_follow_path(x, y)
-                    GAME.player_facing(towards)
                     if vanish:
                         GAME.player_vanish()
 

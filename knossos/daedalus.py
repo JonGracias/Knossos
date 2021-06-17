@@ -31,15 +31,15 @@ class daeda():
         self.MAP.fill(c.BLACK)
         self.CELL_SURF = pygame.Surface((self.map_size, self.map_size), pygame.SRCALPHA)
         self.CELL_SURF.fill(self.color)
-
-        self.createGrid()
+        
+        self.create_grid()
         self.daedalus()
         self.endLoc()
         
         
 
     # Draw the maze-------------------------------------------------------------------------------------------------------
-    def renderGrid(self, surface, color=choice(c.MEDITERRANEAN)):
+    def render_maze(self, surface, color=choice(c.MEDITERRANEAN)):
         
         for value in (self.mazemap):
             x, y, width, height = value
@@ -50,7 +50,7 @@ class daeda():
         self.BACKGROUND.blit(self.MAP,(0,0))
         surface.blit(self.BACKGROUND, (5, 30))
 
-    def debugGrid(self, screen):
+    def debug_maze(self, screen):
         for value in (self.grid):
             x, y = value[0], value[1]
     
@@ -62,7 +62,7 @@ class daeda():
 
     # Grid---------------------------------------------------------
 
-    def createGrid(self):
+    def create_grid(self):
         for i in range(self.cellNum):
             x = (self.cell * i) + (self.wall * i) + 5
             for j in range(self.cellNum):

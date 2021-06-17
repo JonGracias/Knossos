@@ -17,7 +17,6 @@ class Scoreboard():
         self.font = pygame.font.Font("freesansbold.ttf", 18)
 
     def draw(self, screen):
-
         SCORE_SURF = self.font.render(self.text, True, c.WHITE)
         SCORE_BOARD = pygame.Surface(
             (self.width, self.height), pygame.SRCALPHA)
