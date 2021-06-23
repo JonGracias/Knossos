@@ -8,60 +8,23 @@ class daeda():
         self.cellNum = num
         self.wall = 5
         self.cell = 35
+        self.map_size = 605
         self.wall_cell = self.wall + self.cell
 
         self.grid = []
         self.solution = {}
-
         self.mazemap = []
         self.deadend = []
         self.enemy_loc = []
         self.farCell = []
-        self.andron = [(int(self.wall),
-                        int(self.wall))]
+        self.andron = [(5+(self.cell * .5),  5+(self.cell * .5), 1, 1)]
         self.flag = 0
-        self.font = pygame.font.Font("freesansbold.ttf", int(self.cell * .28))
-        self.color = choice(c.MEDITERRANEAN)
 
-        self.map_size = 605
-
-        self.BACKGROUND = pygame.Surface((self.map_size, self.map_size), pygame.SRCALPHA)
-        self.BACKGROUND.fill(c.BLACK)
-        self.MAP = pygame.Surface((self.map_size, self.map_size), pygame.SRCALPHA)
-        self.MAP.fill(c.BLACK)
-        self.CELL_SURF = pygame.Surface((self.map_size, self.map_size), pygame.SRCALPHA)
-        self.CELL_SURF.fill(self.color)
-        
         self.create_grid()
         self.daedalus()
         self.endLoc()
-        
-        
-
-    # Draw the maze-------------------------------------------------------------------------------------------------------
-    def render_maze(self, surface, color=choice(c.MEDITERRANEAN)):
-        
-        for value in (self.mazemap):
-            x, y, width, height = value
-            self.CELL_SURF = pygame.Surface((width, height), pygame.SRCALPHA)
-            self.CELL_SURF.fill(color)
-
-            self.MAP.blit(self.CELL_SURF, (x, y))
-        self.BACKGROUND.blit(self.MAP,(0,0))
-        surface.blit(self.BACKGROUND, (5, 30))
-
-    def debug_maze(self, screen):
-        for value in (self.grid):
-            x, y = value[0], value[1]
-    
-            s = str(x)
-            b = str(y)
-            sb = s + ", " + b
-            GRID_SURF = self.font.render(sb, True, c.WHITE)
-            screen.blit(GRID_SURF, [x, y])
 
     # Grid---------------------------------------------------------
-
     def create_grid(self):
         for i in range(self.cellNum):
             x = (self.cell * i) + (self.wall * i) + 5
@@ -69,8 +32,7 @@ class daeda():
                 y = (self.cell * j) + (self.wall * j) + 5
                 self.grid.append((x, y))
 
-    # Carves the maze-----------------------------------------------------------------------------------------------------
-
+    # Carve the maze-----------------------------------------------------------------------------------------------------
     def daedalus(self):
         x, y = self.grid[0]
         visited = []
@@ -137,31 +99,26 @@ class daeda():
 
     def push_left(self, x, y):
         x, y = (x - self.wall, y)
-        self.mazemap.append((x, y,
-                             self.wall_cell, self.cell))
-        self.andron.append((x, y))
+        self.mazemap.append((x, y, self.wall_cell, self.cell))
+        self.andron.append(((x+(self.cell * .5))-self.cell, y+(self.cell * .5), self.wall_cell, 1))
 
     def push_right(self, x, y):
-        self.mazemap.append((x, y,
-                             self.wall_cell, self.cell))
-        self.andron.append((x + self.cell, y))
+        self.mazemap.append((x, y, self.wall_cell, self.cell))
+        self.andron.append((x+(self.cell * .5), y+(self.cell * .5), self.wall_cell, 1))
 
     def push_up(self, x, y):
         x, y = (x, y - self.wall)
-        self.mazemap.append((x, y,
-                             self.cell, self.cell + self.wall))
-        self.andron.append((x, y))
+        self.mazemap.append((x, y, self.cell, self.cell + self.wall))
+        self.andron.append((x+(self.cell * .5), (y+(self.cell * .5))-self.cell, 1, self.wall_cell))
 
     def push_down(self, x, y):
-        self.mazemap.append((x, y,
-                             self.cell, self.cell + self.wall))
-        self.andron.append((x, y + self.cell))
+        self.mazemap.append((x, y, self.cell, self.cell + self.wall))
+        self.andron.append((x+(self.cell * .5), y+(self.cell * .5), 1, self.wall_cell))
 
     def backtracking(self, x, y):
-        self.mazemap.append((x, y,
-                             self.cell, self.cell))
+        self.mazemap.append((x, y, self.cell, self.cell))
         self.deadend.append((x, y))
-        self.andron.append((x, y))
+        self.andron.append((x+(self.cell * .5), y+(self.cell * .5), 1, 1))
 
     # End location---------------------------------------------------------------------------------------------------------
 

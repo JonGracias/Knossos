@@ -4,7 +4,7 @@ from knossos.color import colors as c
 
 
 class Screen():
-    def __init__(self, width=615, height=667, background_color=c.MNAVY,
+    def __init__(self, width=615, height=685, background_color=c.MNAVY,
                  font_type="freesansbold.ttf", font_size=20, clock_tick=60):
         self.width = width
         self.height = height
@@ -61,17 +61,18 @@ class Screen():
             self.screen.blit(s, (10, 35))
             self.screen.blit(PAUSED_SURF, [267, 320])
 
-    def update_screen(self, maze, player, target, swords, enemy_swords,
+    def update_screen(self,gate, maze, player, target, swords, enemy_swords,
                       level, score, lives, timer, pause, enemies, chasing_enemies):
         self.refresh_background()
+        self.refresh_maze_screen()
         self.draw_maze(maze)
+        self.draw_maze(gate)
         self.draw_enemies(enemies)
         self.draw_enemies(chasing_enemies)
         self.draw_player(player)
         self.draw_swords(swords)
         self.draw_swords(enemy_swords)
         self.draw_player(target)
-        self.refresh_maze_screen()
         self.draw_level(level)
         self.draw_score(score)
         self.draw_lives(lives)

@@ -6,6 +6,7 @@ from knossos.timer import Timer
 from knossos.maze import Maze
 import knossos.score_data as sd
 from knossos.score_data import Levels
+from knossos.color import colors as c
 import random
 import pickle
 
@@ -15,15 +16,17 @@ class Game():
         self.screen = Screen()
 
         # Maze resources---------------------------------
-        
+        self.color = random.choice(c.MEDITERRANEAN)
         self.set_maze()
         self.lvl, self.cells = Levels.levels[0]
         self.aMaze = daeda(self.cells)
         self.maze = self.aMaze.mazemap
+        self.gate = self.aMaze.andron
         self.wall = self.aMaze.wall
         self.cell = self.aMaze.cell
         x, y = self.aMaze.grid[0]
         self.maze_list = []
+        self.gate_list = []
 
         # Scoreboard resources---------------------------------
         self.timer = Timer()
@@ -46,8 +49,7 @@ class Game():
         self.sword_list = []
         self.wall_cell = self.wall + self.cell
         self.pose = True
-        self.player_strike = False
-        self.player_facing_left = [(-70, 0), (-105, 0)]
+        self.speed = 10
 
        # Enemy resources------------------------
         self.enemy_list = []
@@ -65,11 +67,10 @@ class Game():
 
         self.PAUSED = False
         self.rooms()
+        self.gates()
         self.enemies()
         self.display_level()
     # DATA----------------------------------------------------------------
-         
-
     def display_level(self):
         self.level.text = "Level: " + str(self.lvl)
 
@@ -108,16 +109,6 @@ class Game():
         sd.Score_Data(0, 000000, self.current_highscore)
         sd.Score_Data(self.lvl, self.current_score, self.current_highscore)
 
-    # Maze rooms---------------------------------------------------------------------------
-    def rooms(self):
-        for value in self.maze:
-            x, y, width, height = value
-            self.room = Maze(x, y, width, height)
-            self.maze_list.append(self.room)
-
-    def move_maze(self):
-        for room in self.maze_list:
-            room.x += 1
 
     # Swords-------------------------------------------------------------------------------
     def swords(self, toward):
@@ -134,30 +125,33 @@ class Game():
             if direction == toward:
                 self.sword = Sword(x, y, width, hieght, ix, iy)
                 self.sword_list.append(self.sword)
-                self.player_strike = True
+    
 
 
     def enemy_swords(self, enemy):
         x, y = enemy.x, enemy.y
-        #        |                  dx / dy                  | ix |  iy |        wx      |        wy      |          x          |           y         |           width            |              hieght          |
-        sword = {(x - (self.wall_cell), y)                   :(-70, -70 , (x - self.wall),  y             , (x - self.wall_cell),  y                  , ((self.cell*2) + self.wall),  self.cell)                 ,
-                 (x + (self.wall_cell), y)                   :( 0 , -70 , (x + self.cell),  y             ,  x                  ,  y                  , ((self.cell*2) + self.wall),  self.cell)                 ,
-                 (x,                    y - (self.wall_cell)):(-35, -100,  x             , (y - self.wall),  x                  , (y - self.wall_cell),   self.cell                , ((self.cell*2) + self.wall)),
-                 (x,                    y + (self.wall_cell)):( 0 , -105,  x             , (y + self.cell),  x                  ,  y                  ,   self.cell                , ((self.cell*2) + self.wall))}
-
+        #        | dx / dy |  ix  | iy |        wx      |        wy      |          x          |           y         |           width            |              hieght          |
+        sword = {(-40,   0): (-70,  -70, (x - self.wall),  y             , (x - self.wall_cell),  y                  , ((self.cell*2) + self.wall),  self.cell)                 ,
+                 ( 40,   0): (  0,  -70, (x + self.cell),  y             ,  x                  ,  y                  , ((self.cell*2) + self.wall),  self.cell)                 ,
+                 (  0, -40): (-35, -100,  x             , (y - self.wall),  x                  , (y - self.wall_cell),   self.cell                , ((self.cell*2) + self.wall)),
+                 (  0,  40): (  0, -105,  x             , (y + self.cell),  x                  ,  y                  ,   self.cell                , ((self.cell*2) + self.wall))}
+ 
+        dx, dy = self.player.x - x, self.player.y -y
         for key, value in sword.items():
             dx, dy, = key
             ix, iy, wx, wy, x, y, width, hieght = value
-            if (dx, dy) == (self.player.x, self.player.y) and (wx, wy) in self.aMaze.andron:
-                self.enemy_sword = Enemy_Sword(x, y, width, hieght, ix, iy)
-                self.enemy_sword_list.append(self.enemy_sword)
-                self.enemy_strike = True
+            for room in self.gate_list:
+                if (dx, dy) == (self.player.x, self.player.y) and room.RECT.collidepoint(dx,dy):
+                    self.enemy_sword = Enemy_Sword(x, y, width, hieght, ix, iy)
+                    self.enemy_sword_list.append(self.enemy_sword)
+                    self.enemy_strike = True
 
     # Clears swords list to stop rendering Sword
 
     def swords_done(self):
         self.sword_list.clear()
-        self.player_strike = False
+
+    def enemy_swords_done(self):
         self.enemy_sword_list.clear()
         self.enemy_strike = False
 
@@ -202,7 +196,7 @@ class Game():
         for value in self.aMaze.enemy_loc:
             x, y = value
             self.enemy = Enemy(x, y, self.cell, self.cell)
-            #self.enemy_list.append(self.enemy)
+            self.enemy_list.append(self.enemy)
 
     # Partrolling Enemies----------------------------------------------------------
     # Checks if enemy is in a position where the player has been before,
@@ -210,103 +204,148 @@ class Game():
 
     def enemy_check_follow(self, enemy):
         if (enemy.x, enemy.y) in self.following.keys():
+            enemy.moves.clear()
             self.enemy_list.remove(enemy)
             self.enemy_chasing_list.append(enemy)
+        else:
+            self.enemy_path_patrolling(enemy)
 
     # Partrolling enemies are given ten moves that starting from dead
     # end spawn location leading to first cell of maze
     # once the patrolling enemy reaches the end of those ten steps it
     # will walk back to the dead end by using enemy.move_back
 
-    def enemy_moves(self, enemy):
+    def enemy_patrolling(self, enemy):
         if len(enemy.move_back) == 0:
             x, y = enemy.x, enemy.y
-            enemy.moves.append((x, y))
             try:
                 for i in range(10):
                     x, y = self.solution[x, y]
                     enemy.moves.append((x, y))
             except KeyError:
-                pass
+                print("ahhhhhhhhhhh")
         else:
             enemy.moves = list(reversed(enemy.move_back))
+            self.enemy_path_patrolling(enemy)
 
     # Changes enemy x, y using  enemy.moves. Pops enemy_move into
     # move_back to create a patrolling back and forth motion.
-
-    def enemy_move_patrolling(self, enemy):
-
-        x, y = enemy.x, enemy.y
+    def enemy_path_patrolling(self, enemy):
         if len(enemy.moves) == 0:
-            self.enemy_moves(enemy)
+            self.enemy_patrolling(enemy)
         else:
-            enemy.x, enemy.y = enemy.moves[0]
+            self.stage_moves(enemy)
+
+
+    def stage_moves(self, enemy):
+        x, y = enemy.x, enemy.y
+        x1, y1 = enemy.moves[0]
+        if enemy.enemy_steps_left > 0:
+            self.step_left(enemy)
+        elif enemy.enemy_steps_right > 0:
+            self.step_right(enemy)
+        elif enemy.enemy_steps_up > 0:
+            self.step_up(enemy)
+        elif enemy.enemy_steps_down > 0:
+            self.step_down(enemy)
+        else:
+            dx, dy = x1 - x, y1 - y
+            if dx == -40:
+                enemy.enemy_steps_left = 40/enemy.speed
+            elif dx == 40:
+                enemy.enemy_steps_right = 40/enemy.speed
+            elif dy == -40:
+                enemy.enemy_steps_up = 40/enemy.speed
+            elif dy == 40:
+                enemy.enemy_steps_down = 40/enemy.speed
             enemy.move_back.append(enemy.moves.pop(0))
-            self.enemy_focus(x, y, enemy)
             enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
+            self.enemy_path_patrolling(enemy)
+    
+    def step_left(self, enemy):
+        enemy.x -= enemy.speed
+        enemy.y = enemy.y
+        enemy.ix, enemy.iy = enemy.enemy_facing_left[0]
+        enemy.enemy_facing_left.append(enemy.enemy_facing_left.pop(0))
+        enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
+        enemy.enemy_steps_left -= 1
+   
+
+    def step_right(self, enemy):
+        enemy.x += enemy.speed
+        enemy.y = enemy.y
+        enemy.ix, enemy.iy = enemy.enemy_facing_right[0]
+        enemy.enemy_facing_right.append(enemy.enemy_facing_right.pop(0))
+        enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
+        enemy.enemy_steps_right -= 1
+
+
+    def step_up(self, enemy):
+        enemy.x = enemy.x
+        enemy.y -= enemy.speed
+        enemy.ix, enemy.iy = enemy.enemy_facing_up[0]
+        enemy.enemy_facing_up.append(enemy.enemy_facing_up.pop(0))
+        enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
+        enemy.enemy_steps_up -= 1
+
+
+    def step_down(self, enemy):
+        enemy.x = enemy.x
+        enemy.y += enemy.speed
+        enemy.ix, enemy.iy = enemy.enemy_facing_down[0]
+        enemy.enemy_facing_down.append(enemy.enemy_facing_down.pop(0))
+        enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
+        enemy.enemy_steps_down -= 1
 
 
     def enemy_move_chasing(self, enemy):
         x, y = enemy.x, enemy.y
-        x1, y1 = enemy.x, enemy.y
         if (enemy.x, enemy.y) in self.following.keys():
+            dx, dy = self.player.x - x, self.player.y -y
             x, y = self.following[enemy.x, enemy.y]
-            if (x, y) != (self.player.x, self.player.y):
+            if dx < -20 or dx > 20 or dy < -20 or dy > 20:
                 enemy.x, enemy.y = x, y
-                enemy.move_back.append((enemy.x, enemy.y))
-                self.enemy_focus(x1, y1, enemy)
-                enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
-
+            if enemy.stationary != (x, y):
+                enemy.stationary = (x, y)
+                self.following_animation(enemy, dx, dy)
+            self.fighting_animation(enemy, dx, dy)
+            enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
         else:
             self.enemy_chasing_list.remove(enemy)
-            self.enemy_list.append(enemy)
+            
+    def following_animation(self, enemy, dx, dy):
+            if dx < 0:
+                enemy.ix, enemy.iy = enemy.enemy_facing_left[0]
+                enemy.enemy_facing_left.append(enemy.enemy_facing_left.pop(0))
+            elif dx > 0:
+                enemy.ix, enemy.iy = enemy.enemy_facing_right[0]
+                enemy.enemy_facing_right.append(enemy.enemy_facing_right.pop(0))
+            elif dy < 0:
+                enemy.ix, enemy.iy = enemy.enemy_facing_up[0]
+                enemy.enemy_facing_up.append(enemy.enemy_facing_up.pop(0))
+            elif dy > 0:
+                enemy.ix, enemy.iy = enemy.enemy_facing_down[0]
+                enemy.enemy_facing_down.append(enemy.enemy_facing_down.pop(0))
 
-    def enemy_focus(self, x, y, enemy):
-        left = (x - self.wall_cell, y)
-        right = (x + self.wall_cell, y)
-        up = (x, y - self.wall_cell)
-        down = (x, y + self.wall_cell)
-
-        if left == (enemy.x, enemy.y) or left == (self.player.x, self.player.y):
-            self.enemy_facing("left", enemy)
-        elif right == (enemy.x, enemy.y) or right == (self.player.x, self.player.y):
-            self.enemy_facing("right", enemy)
-        elif up == (enemy.x, enemy.y) or up == (self.player.x, self.player.y):
-            self.enemy_facing("up", enemy)
-        elif down == (enemy.x, enemy.y) or down == (self.player.x, self.player.y):
-            self.enemy_facing("down", enemy)
-
-    def enemy_facing(self, towards, enemy):
-        facing = {"left": [(-70, 0), (-105, 0)],
-                  "right": [(0, 0),  (-35, 0)],
-                  "up": [(-70, -35),  (-105, -35)],
-                  "down": [(0, -35),  (-35, -35)],
-                  "attack_left": [(-110,-70,)],
-                  "attack_right": [(0,-70)],
-                  "attack_up": [(-35,-140)],
-                  "attack_down": [(0,-105)]}
-
-        if not self.enemy_strike:
-            if towards == "left":
-                enemy.ix, enemy.iy = facing["left"][enemy.enemy_pose[0]]
-            elif towards == "right":
-                enemy.ix, enemy.iy = facing["right"][enemy.enemy_pose[0]]
-            elif towards == "up":
-                enemy.ix, enemy.iy = facing["up"][enemy.enemy_pose[0]]
-            elif towards == "down":
-                enemy.ix, enemy.iy = facing["down"][enemy.enemy_pose[0]]
-
-        if self.enemy_strike:
-            if towards == "left":
-                enemy.ix, enemy.iy = facing["attack_left"][0]
-            elif towards == "left":
-                enemy.ix, enemy.iy = facing["attack_right"][0]
-            elif towards == "up":
-                enemy.ix, enemy.iy = facing["attack_up"][0]
-            elif towards == "down":
-                enemy.ix, enemy.iy = facing["attack_down"][0]
-
-        enemy.enemy_pose.append(enemy.enemy_pose.pop(0))
+    def fighting_animation(self, enemy, dx, dy):
+        delay = random.random()
+        if delay >= .9:
+            #left
+            if dx >= -20 and dx <= -10 and dy == 0:
+                self.enemy_sword = Enemy_Sword(enemy.x - 35, enemy.y, (self.wall_cell*2), self.cell, -70, -70)
+                self.enemy_sword_list.append(self.enemy_sword)
+            #right
+            if dx <= 20 and dx >= 10 and dy == 0:
+                self.enemy_sword = Enemy_Sword(enemy.x, enemy.y, (self.wall_cell*2), self.cell, 0, -70)
+                self.enemy_sword_list.append(self.enemy_sword)
+            #up
+            if dx == 0 and dy >= -20 and dy <= -10:
+                self.enemy_sword = Enemy_Sword(enemy.x, enemy.y - 35, self.cell, (self.wall_cell*2), -35, -100)
+                self.enemy_sword_list.append(self.enemy_sword)
+            #down
+            if dx == 0 and dy <= 20 and dy >= 10:
+                self.enemy_sword = Enemy_Sword(enemy.x, enemy.y, self.cell, (self.wall_cell*2), 0, -105)
+                self.enemy_sword_list.append(self.enemy_sword)
 
     def enemy_follow_path(self, x, y):
         self.following[(x, y)] = self.player.x, self.player.y
@@ -317,69 +356,94 @@ class Game():
 
     def player_vanish(self):
         self.player.x, self.player.y = random.choice(self.aMaze.grid)
-        self.following.clear()
-
-    def player_facing(self, towards):
-        if self.pose:
-            l = 0
-        else:
-            l = 1
-        facing = {"left": [(-70, 0), (-105, 0)],
-                  "right": [(0, 0),  (-35, 0)],
-                  "up": [(-70, -35),  (-105, -35)],
-                  "down": [(0, -35),  (-35, -35)],
-                  "attack_left": [(-110,-70,)],
-                  "attack_right": [(0,-70)],
-                  "attack_up": [(-35,-140)],
-                  "attack_down": [(0,-105)]}
-
-
-        if towards == "left":
-            self.player.ix, self.player.iy = facing["left"][l]
-        if towards == "right":
-            self.player.ix, self.player.iy = facing["right"][l]
-        if towards == "up":
-            self.player.ix, self.player.iy = facing["up"][l]
-        if towards == "down":
-            self.player.ix, self.player.iy = facing["down"][l]
-        
-        if self.player_strike:
-            if towards == "left":
-                self.player.ix, self.player.iy = facing["attack_left"][0]
-            if towards == "right":
-                self.player.ix, self.player.iy = facing["attack_right"][0]
-            if towards == "up":
-                self.player.ix, self.player.iy = facing["attack_up"][0]
-            if towards == "down":
-                self.player.ix, self.player.iy = facing["attack_down"][0]
+        self.following.clear()        
 
     def player_left(self):
-        for room in self.maze_list:
-            if room.RECT.collidepoint(self.player.x - 5, self.player.y):
-                self.player.x -= 5
+        self.player.ix, self.player.iy = self.player.player_facing_left[0]
+        for room in self.gate_list:
+            if room.RECT.collidepoint((self.player.x+(self.player.width * .5)) - 1,
+            self.player.y+(self.player.width * .5)):
+                self.player.x -= self.speed
                 self.player.y = self.player.y
-        self.player.ix, self.player.iy = self.player_facing_left[0]
-        self.player_facing_left.append(self.player_facing_left.pop(0))
-        
+        self.player.player_facing_left.append(self.player.player_facing_left.pop(0))
+        self.swords_done()
+
     def player_right(self):
-        if (self.player.x + self.cell, self.player.y) in self.aMaze.andron:
-            self.player.x = self.player.x + (self.wall_cell)
-            self.player.y = self.player.y
-            self.pose = not self.pose
+        self.player.ix, self.player.iy = self.player.player_facing_right[0]
+        for room in self.gate_list:
+            if room.RECT.collidepoint((self.player.x+(self.player.width * .5)) + 1,
+            self.player.y+(self.player.width * .5)):
+                self.player.x += self.speed
+                self.player.y = self.player.y
+        self.player.player_facing_right.append(self.player.player_facing_right.pop(0))
+        self.swords_done()
 
     def player_up(self):
-        if (self.player.x, self.player.y - self.wall) in self.aMaze.andron:
-            self.player.x = self.player.x
-            self.player.y = self.player.y - (self.wall_cell)
-            self.pose = not self.pose
+        self.player.ix, self.player.iy = self.player.player_facing_up[0]
+        for room in self.gate_list:
+            if room.RECT.collidepoint(self.player.x+(self.player.width * .5),
+            (self.player.y+(self.player.width * .5)) - 1):
+                self.player.x = self.player.x
+                self.player.y -= self.speed
+        self.player.player_facing_up.append(self.player.player_facing_up.pop(0))
+        self.swords_done()
+
 
     def player_down(self):
-        if (self.player.x, self.player.y + self.cell) in self.aMaze.andron:
-            self.player.x = self.player.x
-            self.player.y = self.player.y + (self.wall_cell)
-            self.pose = not self.pose
+        self.player.ix, self.player.iy = self.player.player_facing_down[0]
+        for room in self.gate_list:
+            if room.RECT.collidepoint(self.player.x+(self.player.width * .5),
+            (self.player.y+(self.player.width * .5)) + 1):
+                self.player.x = self.player.x
+                self.player.y += self.speed
+        self.player.player_facing_down.append(self.player.player_facing_down.pop(0))
+        self.swords_done()
 
+    def player_strike(self, towards):
+        if towards == "left":
+            self.player.ix, self.player.iy = -110, -70
+            self.swords_done()
+        if towards == "right":
+            self.player.ix, self.player.iy = 0, -70
+            self.swords_done()
+        if towards == "up":
+            self.player.ix, self.player.iy = -35, -140
+            self.swords_done()
+        if towards == "down":
+            self.player.ix, self.player.iy = 0, -105
+            self.swords_done()
+
+    def player_default(self, towards):
+        if towards == "left":
+            self.player.ix, self.player.iy = -70, 0
+            self.swords_done()
+        if towards == "right":
+            self.player.ix, self.player.iy = -35, 0
+            self.swords_done()
+        if towards == "up":
+            self.player.ix, self.player.iy = -70, -35
+            self.swords_done()
+        if towards == "down":
+            self.player.ix, self.player.iy = 0, -35
+            self.swords_done()
     # Environment----------------------------------------------------------
+    # Maze rooms---------------------------------------------------------------------------
+    def rooms(self):
+        for value in self.maze:
+            x, y, width, height = value
+            self.room = Maze(x, y, width, height, self.color)
+            self.maze_list.append(self.room)
+
+    def gates(self):
+        for value in self.gate:
+            x, y, width, height = value
+            self.door = Maze(x, y, width, height, c.WHITE)
+            self.gate_list.append(self.door)
+
+    def move_maze(self):
+        for room in self.maze_list:
+            room.x += 1
+
     def set_target_imagex(self):
         x, y = self.target.x, self.target.y
         if (x, y - self.wall) in self.aMaze.andron:
@@ -408,7 +472,7 @@ class Game():
         self.up_date_highscore()
 
     def update_screen(self):
-        self.screen.update_screen(self.maze_list, self.player,
+        self.screen.update_screen(self.gate_list, self.maze_list, self.player,
                                   self.target, self.sword_list, self.enemy_sword_list,
                                   self.level, self.score, self.lives, self.timer, self.PAUSED,
                                   self.enemy_list, self.enemy_chasing_list)

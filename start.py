@@ -18,6 +18,7 @@ def main():
     move_right = False
     move_up = False
     move_down = False
+    default = True
     vanish = False
 
     # towards dictates which way the sword will stike
@@ -25,13 +26,13 @@ def main():
     towards = "down"
 
     PLAYER_EVENT = pygame.USEREVENT + 1
-    pygame.time.set_timer(PLAYER_EVENT, 125)
+    pygame.time.set_timer(PLAYER_EVENT, 100)
 
     ENEMY_EVENT_PATROLLING = pygame.USEREVENT + 2
-    pygame.time.set_timer(ENEMY_EVENT_PATROLLING, 500)
+    pygame.time.set_timer(ENEMY_EVENT_PATROLLING, 200)
 
     ENEMY_EVENT_CHASING = pygame.USEREVENT + 3
-    pygame.time.set_timer(ENEMY_EVENT_CHASING, 225)
+    pygame.time.set_timer(ENEMY_EVENT_CHASING, 150)
 
     TIMER_EVENT = pygame.USEREVENT + 4
     pygame.time.set_timer(TIMER_EVENT, 2000)
@@ -69,16 +70,22 @@ def main():
                     # player control--------------------
                     elif event.key == K_SPACE:
                         sword_strike = True
+                        default = False
                     elif event.key == K_a:
                         move_left = True
+                        default = False
                     elif event.key == K_d:
                         move_right = True
+                        default = False
                     elif event.key == K_w:
                         move_up = True
+                        default = False
                     elif event.key == K_s:
                         move_down = True
+                        default = False
                     elif event.key == K_r:
                         vanish = True
+                        default = False
                     elif event.key == K_LEFT:
                         towards = "left"
                     elif event.key == K_RIGHT:
@@ -92,48 +99,63 @@ def main():
                 elif event.type == KEYUP:
                     if event.key == K_SPACE:
                         sword_strike = False
+                        default = True
                     elif event.key == K_a:
                         move_left = False
+                        default = True
                     elif event.key == K_d:
                         move_right = False
+                        default = True
                     elif event.key == K_w:
                         move_up = False
+                        default = True
                     elif event.key == K_s:
                         move_down = False
+                        default = True
                     elif event.key == K_r:
                         vanish = False
+                        default = True
 
                 # game events -------------------------------
             if not GAME.PAUSED:
                 if event.type == PLAYER_EVENT:
                     x, y = GAME.player.x, GAME.player.y
                     if sword_strike:
+                        GAME.player_strike(towards)
                         GAME.swords(towards)
-                    if move_left:
+                    elif move_left and not sword_strike:
                         towards = "left"
                         GAME.player_left()
-                    if move_right:
+                        GAME.enemy_follow_path(x, y)
+                    elif move_right and not sword_strike:
                         towards = "right"
                         GAME.player_right()
-                    if move_up:
+                        GAME.enemy_follow_path(x, y)
+                    elif move_up and not sword_strike:
                         towards = "up"
                         GAME.player_up()
-                    if move_down:
+                        GAME.enemy_follow_path(x, y)
+                    elif move_down and not sword_strike:
                         towards = "down"
                         GAME.player_down()
-                    GAME.enemy_follow_path(x, y)
+                        GAME.enemy_follow_path(x, y)
+                    elif default and not sword_strike:
+                        GAME.player_default(towards)
+                        GAME.enemy_follow_path(x, y)
                     if vanish:
                         GAME.player_vanish()
 
                 if event.type == ENEMY_EVENT_PATROLLING:
                     for enemy in GAME.enemy_list:
                         GAME.enemy_check_follow(enemy)
-                        GAME.enemy_move_patrolling(enemy)
+
 
                 if event.type == ENEMY_EVENT_CHASING:
                     for enemy in GAME.enemy_chasing_list:
+                        GAME.enemy_swords_done()
                         GAME.enemy_move_chasing(enemy)
-                        GAME.enemy_swords(enemy)
+                        
+
 
                 if event.type == TIMER_EVENT:
                     if GAME.check_timer():
@@ -147,7 +169,7 @@ def main():
                     if GAME.check_sword_collision_chase():
                         GAME.calc_score()
                     GAME.check_sword_collision_player()
-                    GAME.swords_done()
+
 
                 if GAME.check_gameover():
                     gameover.main()
