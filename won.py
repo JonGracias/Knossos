@@ -1,7 +1,7 @@
 import pygame
 import sys
 from pygame.locals import *
-from knossos.menus import Win
+from knossos.menu_screens import Win
 import start as s
 import main as m
 

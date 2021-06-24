@@ -4,7 +4,7 @@ from knossos.color import colors as c
 
 
 class Screen():
-    def __init__(self, width=615, height=685, background_color=c.MNAVY,
+    def __init__(self, width=615, height=700, background_color=c.MNAVY,
                  font_type="freesansbold.ttf", font_size=20, clock_tick=60):
         self.width = width
         self.height = height
@@ -35,12 +35,11 @@ class Screen():
         player.draw_sprite(self.maze_screen)
 
     def refresh_maze_screen(self):
-        self.screen.blit(self.maze_screen, (5, 30))
+        self.screen.blit(self.maze_screen, (5, 60))
         self.maze_screen.fill(c.BLACK)
-
+        pygame.draw.rect(self.screen, c.SILVER, [5, 0, 605, 58])
 
     def draw_level(self, level):
-        pygame.draw.rect(self.screen, c.SILVER, [5, 0, 605, 28])
         level.draw(self.screen)
 
     def draw_score(self, score):
@@ -49,6 +48,10 @@ class Screen():
     def draw_lives(self, lives):
         lives.draw(self.screen)
         lives.draw_lives(self.screen)
+
+    def draw_cooldown(self, cooldown):
+        cooldown.draw(self.screen)
+        cooldown.draw_cooldown(self.screen)
 
     def draw_timer(self, timer):
         timer.draw(self.screen)
@@ -62,7 +65,7 @@ class Screen():
             self.screen.blit(PAUSED_SURF, [267, 320])
 
     def update_screen(self,gate, maze, player, target, swords, enemy_swords,
-                      level, score, lives, timer, pause, enemies, chasing_enemies):
+                      level, score, lives, cooldown, ability1, ability2, timer, pause, enemies, chasing_enemies):
         self.refresh_background()
         self.refresh_maze_screen()
         self.draw_maze(maze)
@@ -76,40 +79,43 @@ class Screen():
         self.draw_level(level)
         self.draw_score(score)
         self.draw_lives(lives)
+        self.draw_cooldown(cooldown)
+        self.draw_level(ability1)
+        self.draw_level(ability2)
         self.draw_timer(timer)
         self.draw_paused(pause)
         self.clock.tick(self.clock_tick)
         pygame.display.update()
 
     # Start Menu--------------------------------------------------------
-    def draw_start_screen(self, start):
-        start.draw(self.screen)
+    def draw_screen(self, start):
+        start.draw(self.maze_screen)
 
-    def menu_update_screen(self, maze, color, welcome, to, knossos,
+    def menu_update_screen(self, maze, welcome, to, knossos,
              timetrial, adventure, dark, highscore):
         self.refresh_background()
-        maze.renderGrid(self.screen, color)
-        self.draw_gameover(welcome)
-        self.draw_gameover(to)
-        self.draw_gameover(knossos)
-        self.draw_gameover(timetrial)
-        self.draw_gameover(adventure)
-        self.draw_gameover(dark)
-        self.draw_gameover(highscore)
+        self.refresh_maze_screen()
+        self.draw_maze(maze)
+        self.draw_screen(welcome)
+        self.draw_screen(to)
+        self.draw_screen(knossos)
+        self.draw_screen(timetrial)
+        self.draw_screen(adventure)
+        self.draw_screen(dark)
+        self.draw_screen(highscore)
         pygame.display.update()
 
     # Gameover screen----------------------------------------------------
-    def draw_gameover(self, lost):
-        lost.draw(self.screen)
 
-    def gameover_update_screen(self, maze, color, lost, highscore, score, retry, quit):
+    def gameover_update_screen(self, maze, lost, highscore, score, retry, quit):
         self.refresh_background()
-        maze.renderGrid(self.screen, color)
-        self.draw_gameover(lost)
-        self.draw_gameover(highscore)
-        self.draw_gameover(score)
-        self.draw_gameover(retry)
-        self.draw_gameover(quit)
+        self.refresh_maze_screen()
+        self.draw_maze(maze)
+        self.draw_screen(lost)
+        self.draw_screen(highscore)
+        self.draw_screen(score)
+        self.draw_screen(retry)
+        self.draw_screen(quit)
         self.clock.tick(self.clock_tick)
         pygame.display.update()
 
@@ -117,14 +123,15 @@ class Screen():
     def draw_winner(self, won):
         won.draw(self.screen)
 
-    def win_update_screen(self, maze, color, won, highscore, score, next_level, retry, quit):
+    def win_update_screen(self, maze, won, highscore, score, next_level, retry, quit):
         self.refresh_background()
-        maze.renderGrid(self.screen, color)
-        self.draw_winner(won)
-        self.draw_winner(highscore)
-        self.draw_winner(score)
-        self.draw_winner(next_level)
-        self.draw_winner(retry)
-        self.draw_winner(quit)
+        self.refresh_maze_screen()
+        self.draw_maze(maze)
+        self.draw_screen(won)
+        self.draw_screen(highscore)
+        self.draw_screen(score)
+        self.draw_screen(next_level)
+        self.draw_screen(retry)
+        self.draw_screen(quit)
         self.clock.tick(self.clock_tick)
         pygame.display.update()

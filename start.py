@@ -3,7 +3,7 @@ import sys
 from pygame.locals import *
 import knossos.game
 import gameover
-import level_complete
+import won
 
 
 def main():
@@ -177,8 +177,9 @@ def main():
 
             if GAME.check_target_collision():
                 GAME.next_level()
-                level_complete.main()
+                won.main()
 
+        GAME.mp_cooldown() 
         GAME.update_sprite_rect()
         GAME.update_screen()
 # QUITGAME--------------------------------------------------------------------------------------------------------

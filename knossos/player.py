@@ -30,7 +30,8 @@ class Human(Player):
         self.player_facing_right = [(0, 0),  (-35, 0)]
         self.player_facing_up = [(-70, -35),  (-105, -35)]
         self.player_facing_down = [(0, -35),  (-35, -35)]
-
+        self.speed = 10
+        self.pose = True
 
 class Target(Player):
     def __init__(self, x, y, width, hieght):
@@ -56,6 +57,7 @@ class Enemy(Player):
         self.image = pygame.image.load('knossos/res/enemy.png')
         self.moves = []
         self.move_back = []
+        self.stationary = []
         self.enemy_pose = [0, 1]
         self.enemy_steps_left = 0
         self.enemy_steps_right = 0
@@ -66,4 +68,3 @@ class Enemy(Player):
         self.enemy_facing_up = [(-70, -35),  (-105, -35)]
         self.enemy_facing_down = [(0, -35),  (-35, -35)]
         self.speed = 5
-        self.stationary = []

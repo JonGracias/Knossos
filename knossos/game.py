@@ -1,5 +1,5 @@
 from knossos.player import Human, Target, Enemy, Sword, Enemy_Sword
-from knossos.scoreboard import Level, Score, HighScore, Lives
+from knossos.scoreboard import Level, Score, Highscore, Lives, Cooldown, Ability
 from knossos.daedalus import daeda
 from knossos.screen import Screen
 from knossos.timer import Timer
@@ -8,13 +8,13 @@ import knossos.score_data as sd
 from knossos.score_data import Levels
 from knossos.color import colors as c
 import random
+import pygame
 import pickle
 
 
 class Game():
     def __init__(self):
         self.screen = Screen()
-
         # Maze resources---------------------------------
         self.color = random.choice(c.MEDITERRANEAN)
         self.set_maze()
@@ -24,56 +24,53 @@ class Game():
         self.gate = self.aMaze.andron
         self.wall = self.aMaze.wall
         self.cell = self.aMaze.cell
+        self.wall_cell = self.wall + self.cell
+        self.solution = self.aMaze.solution
         x, y = self.aMaze.grid[0]
         self.maze_list = []
         self.gate_list = []
 
         # Scoreboard resources---------------------------------
-        self.timer = Timer()
-        self.level = Level()
-        self.score = Score()
-        self.lives = Lives()
-        self.highscore = HighScore()
-        self.lives.lives = 20
         self.current_score = 0
+        self.timer = Timer()
+        self.level = Level(str(self.lvl))
+        self.lives = Lives()
+        self.cooldown = Cooldown()
+        self.ability1 = Ability("Vanish ", 45, 45, 340, 7, 10)
+        self.ability2 = Ability("Lightning", 45, 45, 395, 7, 10)
+        self.score = Score("Score: " + str(self.current_score))
+        self.highscore = Highscore()
+        self.lives.lives = 20
+        self.cooldown.energy = 20
         self.current_highscore = sd.score_dict[0]["highscore"]
         self.add_score()
         self.save()
 
-        # Player/target resources----------------------------
+        # Player resources----------------------------
         self.player = Human(x, y, self.cell, self.cell)
-        tx, ty = self.aMaze.farCell
-        self.solution = self.aMaze.solution
-        self.target = Target(tx, ty, self.cell, self.cell)
-        self.set_target_imagex()
         self.sword_list = []
-        self.wall_cell = self.wall + self.cell
-        self.pose = True
-        self.speed = 10
+
+        # Target resources-----------------------------------
+        fx, fy = self.aMaze.farCell
+        self.target = Target(fx, fy, self.cell, self.cell)
+        self.set_target_imagex()
 
        # Enemy resources------------------------
         self.enemy_list = []
-        self.enemy_sword_list = []
         self.enemy_chasing_list = []
         self.enemy_dead = []
+        self.enemy_sword_list = []
         self.following = {}
-        self.patroling_enemy = 1000
-        self.delay = self.patroling_enemy
-        self.chasing_enemy = 500
-        self.chase_delay = self.chasing_enemy
-        self.moves = []
-        self.move_back = []
-        self.enemy_strike = False
+        self.delay = 1000
+        self.chase_delay = 500
+
 
         self.PAUSED = False
         self.rooms()
         self.gates()
         self.enemies()
-        self.display_level()
-    # DATA----------------------------------------------------------------
-    def display_level(self):
-        self.level.text = "Level: " + str(self.lvl)
 
+    # DATA----------------------------------------------------------------
     def display_score(self):
         self.score.text = "Score: " + str(self.current_score)
 
@@ -127,27 +124,6 @@ class Game():
                 self.sword_list.append(self.sword)
     
 
-
-    def enemy_swords(self, enemy):
-        x, y = enemy.x, enemy.y
-        #        | dx / dy |  ix  | iy |        wx      |        wy      |          x          |           y         |           width            |              hieght          |
-        sword = {(-40,   0): (-70,  -70, (x - self.wall),  y             , (x - self.wall_cell),  y                  , ((self.cell*2) + self.wall),  self.cell)                 ,
-                 ( 40,   0): (  0,  -70, (x + self.cell),  y             ,  x                  ,  y                  , ((self.cell*2) + self.wall),  self.cell)                 ,
-                 (  0, -40): (-35, -100,  x             , (y - self.wall),  x                  , (y - self.wall_cell),   self.cell                , ((self.cell*2) + self.wall)),
-                 (  0,  40): (  0, -105,  x             , (y + self.cell),  x                  ,  y                  ,   self.cell                , ((self.cell*2) + self.wall))}
- 
-        dx, dy = self.player.x - x, self.player.y -y
-        for key, value in sword.items():
-            dx, dy, = key
-            ix, iy, wx, wy, x, y, width, hieght = value
-            for room in self.gate_list:
-                if (dx, dy) == (self.player.x, self.player.y) and room.RECT.collidepoint(dx,dy):
-                    self.enemy_sword = Enemy_Sword(x, y, width, hieght, ix, iy)
-                    self.enemy_sword_list.append(self.enemy_sword)
-                    self.enemy_strike = True
-
-    # Clears swords list to stop rendering Sword
-
     def swords_done(self):
         self.sword_list.clear()
 
@@ -169,20 +145,20 @@ class Game():
     def check_sword_collision_patrol(self):
         for sword in self.sword_list:
             for enemy in self.enemy_list:
-                if sword.RECT.contains(enemy.RECT):
+                if sword.RECT.colliderect(enemy.RECT):
                     self.enemy_dead.append(self.enemy_list.remove(enemy))
                     return True
 
     def check_sword_collision_chase(self):
         for sword in self.sword_list:
             for enemy in self.enemy_chasing_list:
-                if sword.RECT.contains(enemy.RECT):
+                if sword.RECT.colliderect(enemy.RECT):
                     self.enemy_dead.append(self.enemy_chasing_list.remove(enemy))
                     return True
 
     def check_sword_collision_player(self):
         for sword in self.enemy_sword_list:
-            if sword.RECT.contains(self.player.RECT):
+            if sword.RECT.colliderect(self.player.RECT):
                 self.lives.lives -= 2
                 return True
 
@@ -329,7 +305,7 @@ class Game():
 
     def fighting_animation(self, enemy, dx, dy):
         delay = random.random()
-        if delay >= .9:
+        if delay >= .5:
             #left
             if dx >= -20 and dx <= -10 and dy == 0:
                 self.enemy_sword = Enemy_Sword(enemy.x - 35, enemy.y, (self.wall_cell*2), self.cell, -70, -70)
@@ -355,15 +331,18 @@ class Game():
     # to stop enemies chasing
 
     def player_vanish(self):
-        self.player.x, self.player.y = random.choice(self.aMaze.grid)
-        self.following.clear()        
+        if self.cooldown.energy >= 6:
+            self.player.x, self.player.y = random.choice(self.aMaze.grid)
+            self.cooldown.energy -= 6
+            self.cooldown.ready = pygame.time.get_ticks()
+            self.following.clear()        
 
     def player_left(self):
         self.player.ix, self.player.iy = self.player.player_facing_left[0]
         for room in self.gate_list:
             if room.RECT.collidepoint((self.player.x+(self.player.width * .5)) - 1,
             self.player.y+(self.player.width * .5)):
-                self.player.x -= self.speed
+                self.player.x -= self.player.speed
                 self.player.y = self.player.y
         self.player.player_facing_left.append(self.player.player_facing_left.pop(0))
         self.swords_done()
@@ -373,7 +352,7 @@ class Game():
         for room in self.gate_list:
             if room.RECT.collidepoint((self.player.x+(self.player.width * .5)) + 1,
             self.player.y+(self.player.width * .5)):
-                self.player.x += self.speed
+                self.player.x += self.player.speed
                 self.player.y = self.player.y
         self.player.player_facing_right.append(self.player.player_facing_right.pop(0))
         self.swords_done()
@@ -384,7 +363,7 @@ class Game():
             if room.RECT.collidepoint(self.player.x+(self.player.width * .5),
             (self.player.y+(self.player.width * .5)) - 1):
                 self.player.x = self.player.x
-                self.player.y -= self.speed
+                self.player.y -= self.player.speed
         self.player.player_facing_up.append(self.player.player_facing_up.pop(0))
         self.swords_done()
 
@@ -395,7 +374,7 @@ class Game():
             if room.RECT.collidepoint(self.player.x+(self.player.width * .5),
             (self.player.y+(self.player.width * .5)) + 1):
                 self.player.x = self.player.x
-                self.player.y += self.speed
+                self.player.y += self.player.speed
         self.player.player_facing_down.append(self.player.player_facing_down.pop(0))
         self.swords_done()
 
@@ -471,9 +450,28 @@ class Game():
         self.end_round_score()
         self.up_date_highscore()
 
+    def is_cooldown_ready(self):
+        cooldown = 4000
+        if self.cooldown.energy < 20:
+            now = pygame.time.get_ticks()
+            return now - self.cooldown.ready >= cooldown
+        else:
+            return False
+
+    def mp_cooldown(self):
+        cooldown = 500
+        if self.is_cooldown_ready():
+            now = pygame.time.get_ticks()
+            if now - self.cooldown.last >= cooldown:
+                self.cooldown.energy += 1
+                self.cooldown.last = pygame.time.get_ticks()
+
+        else:
+            self.ready = False
     def update_screen(self):
         self.screen.update_screen(self.gate_list, self.maze_list, self.player,
                                   self.target, self.sword_list, self.enemy_sword_list,
-                                  self.level, self.score, self.lives, self.timer, self.PAUSED,
+                                  self.level, self.score, self.lives, self.cooldown,
+                                  self.ability1, self.ability2, self.timer, self.PAUSED,
                                   self.enemy_list, self.enemy_chasing_list)
 

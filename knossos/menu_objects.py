@@ -2,7 +2,7 @@ import pygame
 from knossos.color import colors as c
 
 
-class EndGame():
+class Menu_obj():
     def __init__(self, fontsize=18, text="Level: " + str(0), surfx=0, surfy=0, width=100, height=100,
                  fontx=0, fonty=0, fcolor=c.frame, bcolor=c.background):
         self.text = text
@@ -42,20 +42,20 @@ class EndGame():
         screen.blit(FRAME_SURF, [self.x, self.y])
 
 
-class Lost(EndGame):
+class Gameover(Menu_obj):
     def __init__(self, fontsize=18, text="Level: " + str(0), surfx=0, surfy=0, width=100, height=100,
                  fontx=0, fonty=0, fcolor=c.fRed, bcolor=c.bRed):
         super().__init__(fontsize, text, surfx, surfy,
                          width, height, fontx, fonty, fcolor, bcolor)
 
 
-class Won(EndGame):
+class Won(Menu_obj):
     def __init__(self, fontsize=18, text="Level: " + str(0), surfx=0, surfy=0, width=100,
                  height=100, fontx=0, fonty=0, fcolor=c.fGreen, bcolor=c.bGreen):
         super().__init__(fontsize, text, surfx, surfy,
                          width, height, fontx, fonty, fcolor, bcolor)
 
-class Start(EndGame):
+class Start(Menu_obj):
     def __init__(self, fontsize=18, text="Welcome", surfx=0, surfy=0, width=100,
                  height=100, fontx=0, fonty=0, fcolor=c.fBlue, bcolor=c.bBlue):
         super().__init__(fontsize, text, surfx, surfy,
