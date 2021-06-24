@@ -89,7 +89,7 @@ class Screen():
 
     # Start Menu--------------------------------------------------------
     def draw_screen(self, start):
-        start.draw(self.maze_screen)
+        start.draw(self.screen)
 
     def menu_update_screen(self, maze, welcome, to, knossos,
              timetrial, adventure, dark, highscore):
@@ -106,7 +106,6 @@ class Screen():
         pygame.display.update()
 
     # Gameover screen----------------------------------------------------
-
     def gameover_update_screen(self, maze, lost, highscore, score, retry, quit):
         self.refresh_background()
         self.refresh_maze_screen()
@@ -120,9 +119,6 @@ class Screen():
         pygame.display.update()
 
     # Level win screen-----------------------------------------------------------
-    def draw_winner(self, won):
-        won.draw(self.screen)
-
     def win_update_screen(self, maze, won, highscore, score, next_level, retry, quit):
         self.refresh_background()
         self.refresh_maze_screen()

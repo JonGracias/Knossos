@@ -9,52 +9,12 @@ from knossos.score_data import Levels
 import os
 import pickle
 
-
-class Menu():
+class Menu_Screens():
     def __init__(self):
-        self.gamestart()
-        self.load()
-        print(sd.score_dict.items())
-        self.prepare_score_dict()
-        self.save()
-        self.screen = Screen()
-        self.color = c.BLUE
-        self.highscore = sd.score_dict[0]["highscore"]
-        #           fontsize |  text |   x   |   y   |  width |  height  | fontx | fonty
-        self.background = Start(75, "",
-                         10,     5,      595,     595,      85,     65)
-        self.welcome = Start(75, "WELCOME",
-                         105,     20,      405,     80,      0,     0)
-        self.to = Start(55, "T0",
-                         255,     105,      95,     60,      10,     0)
-        self.knossos = Start(75, "KNOSSOS",
-                         105,     170,      405,     80,      10,     0)
-
-        self.timetrial = Start(40, "Time Trial",
-                          180,    290,     250,      70,      10,     10)
-        self.adventure = Start(40, "Adventure",
-                          180,    365,     250,      70,      10,     10)
-        self.dark = Start(40, "Pitch Black",
-                          180,    440,     250,      70,      10,     10)
-
-        self.highscore = Start(40, "HighScore   " + str(self.highscore),
-                          115,    525,     380,      70,      10,     10)
-
         self.aMaze = daeda(15)
         self.maze = self.aMaze.mazemap
         self.maze_list = []
         
-        self.time_button = self.timetrial.RECT
-        self.adv_button = self.adventure.RECT
-        self.dark_button = self.dark.RECT
-
-        self.rooms()
-
-    def menu_update_screen(self):
-        self.screen.menu_update_screen(
-            self.maze_list, self.welcome, self.to, self.knossos,
-             self.timetrial, self.adventure, self.dark, self.highscore)
-
     # Reset level list
     def gamestart(self):
         Levels.levels = [(10, 15), (1, 15), (2, 15), (3, 15), (4, 15),
@@ -88,9 +48,49 @@ class Menu():
     def set_retry(self):
         Levels.levels.insert(0, Levels.levels.pop(-1))
 
+class Menu(Menu_Screens):
+    def __init__(self):
+        super().__init__()
+        self.gamestart()
+        self.load()
+        print(sd.score_dict.items())
+        self.prepare_score_dict()
+        self.save()
+        self.screen = Screen()
+        self.color = c.BLUE
+        self.highscore = sd.score_dict[0]["highscore"]
+        #           fontsize |  text |   x   |   y   |  width |  height  | fontx | fonty
+        self.welcome =   Start(75, "WELCOME",
+                         105,     65,      405,     80,      0,     0)
+        self.to =        Start(55, "T0",
+                         255,     140,      95,     60,      10,     0)
+        self.knossos =   Start(75, "KNOSSOS",
+                         105,     195,      405,     80,      10,     0)
+        self.timetrial = Start(40, "Time Trial",
+                         180,    310,     250,      70,      10,     10)
+        self.adventure = Start(40, "Adventure",
+                         180,    385,     250,      70,      10,     10)
+        self.dark =      Start(40, "Pitch Black",
+                         180,    460,     250,      70,      10,     10)
+        self.highscore = Start(40, "HighScore   " + str(self.highscore),
+                         115,    565,     380,      70,      10,     10)
+
+        
+        self.time_button = self.timetrial.RECT
+        self.adv_button = self.adventure.RECT
+        self.dark_button = self.dark.RECT
+
+        self.rooms()
+
+    def menu_update_screen(self):
+        self.screen.menu_update_screen(
+            self.maze_list, self.welcome, self.to, self.knossos,
+             self.timetrial, self.adventure, self.dark, self.highscore)
+
+
 
 # Game Over Screen------------------------------------------------------
-class GameOver(Menu):
+class GameOver(Menu_Screens):
     def __init__(self):
         super().__init__()
         self.screen = Screen()
@@ -99,7 +99,7 @@ class GameOver(Menu):
         self.current_score = sd.score_dict[self.level]["score"]
         #           fontsize |  text |   x   |   y   |  width |  height  | fontx | fonty
         self.lost = Gameover(75, "GAMEOVER",
-                        5,     5,      595,     595,      65,     65)
+                        10,     65,      595,     595,      65,     65)
         self.highscore = Gameover(40, "HighScore   " + str(self.highscore),
                         110,    210,     400,      70,      10,     10)
         self.score = Gameover(40, "Score           " + str(self.current_score),
@@ -109,9 +109,7 @@ class GameOver(Menu):
         self.main_menu = Gameover(40, "Quit",
                         110,    435,     400,      70,      10,     10)
         self.color = c.RED
-        self.aMaze = daeda(15)
-        self.maze = self.aMaze.mazemap
-        self.maze_list = []
+
 
         self.retry_button = self.retry.RECT
         self.main_menu_button = self.main_menu.RECT
@@ -123,7 +121,7 @@ class GameOver(Menu):
             self.maze_list, self.lost, self.highscore, self.score, self.retry, self.main_menu)
 
 # Level Complete Screen------------------------------------------------------
-class Win(Menu):
+class Win(Menu_Screens):
     def __init__(self):
         super().__init__()
         self.screen = Screen()
@@ -132,7 +130,7 @@ class Win(Menu):
         self.current_score = sd.score_dict[self.level]["score"]
         #           fontsize |  text |   x   |   y   |  width |  height  | fontx | fonty
         self.won = Won(75, "WINNER",
-                        5,     5,      595,     595,      135,     65)
+                        10,     65,      595,     595,      135,     65)
         self.highscore = Won(40, "HighScore   " + str(self.highscore),
                         110,    210,     400,      70,      10,     10)
         self.score = Won(40, "Score           " + str(self.current_score),
@@ -143,10 +141,8 @@ class Win(Menu):
                         110,    435,     400,      70,      10,     10)
         self.main_menu = Won(40, "Quit",
                         110,    505,     400,      70,      10,     10)
+                        
         self.color = c.GREEN
-        self.aMaze = daeda(15)
-        self.maze = self.aMaze.mazemap
-        self.maze_list = []
 
         self.continue_button = self.next_level.RECT
         self.retry_button = self.retry.RECT

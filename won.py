@@ -24,6 +24,7 @@ def main():
                 if win.continue_button.collidepoint(pos):
                     s.main()
                 if win.retry_button.collidepoint(pos):
+                    print("this")
                     win.set_retry()
                     s.main()
                 if win.main_menu_button.collidepoint(pos):
