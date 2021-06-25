@@ -43,6 +43,9 @@ def main():
     ENEMY_SWORD_EVENT = pygame.USEREVENT + 6
     pygame.time.set_timer(ENEMY_SWORD_EVENT, 600)
 
+    EFFECT_ANIMANITON = pygame.USEREVENT + 7
+    pygame.time.set_timer(EFFECT_ANIMANITON, 50)
+
     GAME = knossos.game.Game()
     # RUNGAME-----------------------------------------------------------------------------------------------------
     RUNNING = True
@@ -118,6 +121,10 @@ def main():
 
                 # game events -------------------------------
             if not GAME.PAUSED:
+                if event.type == EFFECT_ANIMANITON:
+                    GAME.vanish_animation()
+                    GAME.lightning_animation()
+
                 if event.type == PLAYER_EVENT:
                     x, y = GAME.player.x, GAME.player.y
                     if sword_strike:
@@ -143,7 +150,7 @@ def main():
                         GAME.player_default(towards)
                         GAME.enemy_follow_path(x, y)
                     if vanish:
-                        GAME.player_vanish()
+                        GAME.player_lightning(towards)
 
                 if event.type == ENEMY_EVENT_PATROLLING:
                     for enemy in GAME.enemy_list:
@@ -164,9 +171,13 @@ def main():
                         GAME.run_down_time()
 
                 if event.type == SWORD_EVENT:
-                    if GAME.check_sword_collision_patrol():
+                    GAME.check_sword_collision_patrol()
+                    GAME.check_sword_collision_chase()
+                    GAME.check_lightning_collision_patrol()
+                    GAME.check_lightning_collision_chase()
+                    if GAME.check_enemy_health_patrolling():
                         GAME.calc_score()
-                    if GAME.check_sword_collision_chase():
+                    if GAME.check_enemy_health_chasing():
                         GAME.calc_score()
                     GAME.check_sword_collision_player()
 

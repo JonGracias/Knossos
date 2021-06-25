@@ -1,5 +1,6 @@
 from knossos.player import Human, Target, Enemy, Sword, Enemy_Sword
 from knossos.scoreboard import Level, Score, Highscore, Lives, Cooldown, Ability
+from knossos.special_fx import Vanish, Lightning
 from knossos.daedalus import daeda
 from knossos.screen import Screen
 from knossos.timer import Timer
@@ -21,14 +22,13 @@ class Game():
         self.lvl, self.cells = Levels.levels[0]
         self.aMaze = daeda(self.cells)
         self.maze = self.aMaze.mazemap
-        self.gate = self.aMaze.andron
-        self.wall = self.aMaze.wall
+        self.wall_width = self.aMaze.wall
         self.cell = self.aMaze.cell
-        self.wall_cell = self.wall + self.cell
+        self.wall_cell = self.wall_width + self.cell
         self.solution = self.aMaze.solution
         x, y = self.aMaze.grid[0]
         self.maze_list = []
-        self.gate_list = []
+        self.wall_list = []
 
         # Scoreboard resources---------------------------------
         self.current_score = 0
@@ -63,6 +63,10 @@ class Game():
         self.following = {}
         self.delay = 1000
         self.chase_delay = 500
+
+        # Effects resources---------------------
+        self.vanish_list =[]
+        self.lightning_list = []
 
 
         self.PAUSED = False
@@ -111,10 +115,10 @@ class Game():
     def swords(self, toward):
         x, y = self.player.x, self.player.y
         #        |    wx / wy        |          x            |         y          |          width          |             hieght       |direction| ix | iy |
-        sword = {(x - (self.wall), y): ((x - self.wall_cell),         y          ,(self.cell*2) + self.wall,           self.cell     ,"left"   , -70, -70 ,),
-                 (x + (self.cell), y): (       x            ,         y          ,(self.cell*2) + self.wall,           self.cell     ,"right"  ,  0 , -70 ,),
-                 (x, y - (self.wall)): (       x            ,(y - self.wall_cell),         self.cell       ,(self.cell*2) + self.wall,"up"     , -35, -100,),
-                 (x, y + (self.cell)): (       x            ,         y          ,         self.cell       ,(self.cell*2) + self.wall,"down"   ,   0 ,-105,)}
+        sword = {(x - (self.wall_width), y): ((x - self.wall_cell),         y          ,(self.cell*2) + self.wall_width,           self.cell     ,"left"   , -70, -70 ,),
+                 (x + (self.cell), y): (       x            ,         y          ,(self.cell*2) + self.wall_width,           self.cell     ,"right"  ,  0 , -70 ,),
+                 (x, y - (self.wall_width)): (       x            ,(y - self.wall_cell),         self.cell       ,(self.cell*2) + self.wall_width,"up"     , -35, -100,),
+                 (x, y + (self.cell)): (       x            ,         y          ,         self.cell       ,(self.cell*2) + self.wall_width,"down"   ,   0 ,-105,)}
 
         for key, value in sword.items():
             wx, wy, = key
@@ -135,26 +139,51 @@ class Game():
     # Because of the way enemies and swords are creacted it is easier to
     # check collision in three different methods
 
+    
     def update_sprite_rect(self):
-        self.player.RECT.x, self.player.RECT.y = self.player.x, self.player.y
+        self.player.update_rects()
         for sword in self.sword_list:
-            sword.RECT.x, sword.RECT.y = sword.x, sword.y
+            sword.update_rects()
         for sword in self.enemy_sword_list:
-            sword.RECT.x, sword.RECT.y = sword.x, sword.y
+            sword.update_rects()
+        for lighting in self.lightning_list:
+            lighting.update_rects()
+
+    def check_enemy_health_patrolling(self):
+        for enemy in self.enemy_list:
+            if enemy.health == 0:
+                self.enemy_dead.append(self.enemy_list.remove(enemy))
+                return True
+
+    def check_enemy_health_chasing(self):
+        for enemy in self.enemy_chasing_list:
+            if enemy.health == 0:
+                self.enemy_dead.append(self.enemy_chasing_list.remove(enemy))
+                return True
 
     def check_sword_collision_patrol(self):
         for sword in self.sword_list:
             for enemy in self.enemy_list:
                 if sword.RECT.colliderect(enemy.RECT):
-                    self.enemy_dead.append(self.enemy_list.remove(enemy))
-                    return True
+                    enemy.health -= 1
+
+    def check_lightning_collision_patrol(self):
+        for lightning in self.lightning_list:
+            for enemy in self.enemy_list:
+                if lightning.RECT.colliderect(enemy.RECT):
+                    enemy.health -= 2
 
     def check_sword_collision_chase(self):
         for sword in self.sword_list:
             for enemy in self.enemy_chasing_list:
                 if sword.RECT.colliderect(enemy.RECT):
-                    self.enemy_dead.append(self.enemy_chasing_list.remove(enemy))
-                    return True
+                    enemy.health -= 1
+
+    def check_lightning_collision_chase(self):
+        for lightning in self.lightning_list:
+            for enemy in self.enemy_chasing_list:
+                if lightning.RECT.colliderect(enemy.RECT):
+                    enemy.health -= 2
 
     def check_sword_collision_player(self):
         for sword in self.enemy_sword_list:
@@ -235,7 +264,7 @@ class Game():
             elif dy == 40:
                 enemy.enemy_steps_down = 40/enemy.speed
             enemy.move_back.append(enemy.moves.pop(0))
-            enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
+            enemy.update_rects()
             self.enemy_path_patrolling(enemy)
     
     def step_left(self, enemy):
@@ -285,7 +314,7 @@ class Game():
                 enemy.stationary = (x, y)
                 self.following_animation(enemy, dx, dy)
             self.fighting_animation(enemy, dx, dy)
-            enemy.RECT.x, enemy.RECT.y = enemy.x, enemy.y
+            enemy.update_rects()
         else:
             self.enemy_chasing_list.remove(enemy)
             
@@ -305,7 +334,7 @@ class Game():
 
     def fighting_animation(self, enemy, dx, dy):
         delay = random.random()
-        if delay >= .5:
+        if delay >= .8:
             #left
             if dx >= -20 and dx <= -10 and dy == 0:
                 self.enemy_sword = Enemy_Sword(enemy.x - 35, enemy.y, (self.wall_cell*2), self.cell, -70, -70)
@@ -332,49 +361,133 @@ class Game():
 
     def player_vanish(self):
         if self.cooldown.energy >= 6:
+            self.effects = Vanish(self.player.x, self.player.y, self.cell, self.cell)
+            self.vanish_list.append(self.effects)
             self.player.x, self.player.y = random.choice(self.aMaze.grid)
             self.cooldown.energy -= 6
             self.cooldown.ready = pygame.time.get_ticks()
-            self.following.clear()        
+            self.following.clear()
+    
+    def vanish_animation(self):
+        for effect in self.vanish_list:
+            if effect.animate == 0:
+                effect.ix, effect.iy = -35, -35
+                effect.animate = 1
+            else:
+                self.vanish_list.pop(0)
+                effect.animate = 0
+
+        
+    def player_lightning(self, towards):
+        if self.cooldown.energy >= 3:
+            if towards == "left":
+                lightning_left = Lightning(self.player.x - 35, self.player.y, self.cell, self.cell)
+                lightning_left.animate = "left"
+                self.lightning_list.append(lightning_left)
+            elif towards == "right":
+                lightning_right = Lightning(self.player.x + 40, self.player.y, self.cell, self.cell)
+                lightning_right.animate = "right"
+                self.lightning_list.append(lightning_right)
+            elif towards == "up":
+                lightning_up = Lightning(self.player.x, self.player.y - 40, self.cell, self.cell, -35, -0)
+                lightning_up.animate = "up"
+                self.lightning_list.append(lightning_up)
+            elif towards == "down":
+                lightning_down = Lightning(self.player.x, self.player.y + 40, self.cell, self.cell, -35, 0)
+                lightning_down.animate = "down"
+                self.lightning_list.append(lightning_down)
+            self.cooldown.energy -= 3
+            self.cooldown.ready = pygame.time.get_ticks() 
+
+    def lightning_animation(self):
+        for lightning in self.lightning_list:
+                if lightning.animate == "left":
+                    lightning.x -= lightning.speed
+                    if self.check_left(lightning):
+                        self.is_lightning_alive(lightning)
+                if lightning.animate == "right":
+                    lightning.x += lightning.speed
+                    if self.check_right(lightning):
+                        self.is_lightning_alive(lightning)
+                if lightning.animate == "up":
+                    lightning.y -= lightning.speed
+                    if self.check_up(lightning):
+                        self.is_lightning_alive(lightning)
+                if lightning.animate == "down":
+                    lightning.y += lightning.speed
+                    if self.check_down(lightning):
+                        self.is_lightning_alive(lightning)
+    
+    def is_lightning_alive(self, lightning):
+        print(lightning.alive)
+        lightning.alive -= 1
+        lightning.speed = 0
+        if lightning.alive == 0:
+            self.lightning_list.remove(lightning)
+
+
+    def check_left(self, other):
+        for walls in self.wall_list:
+            if walls.RECT.colliderect(other.LEFT_RECT):
+                return True
+
+    def check_right(self, other):
+        for walls in self.wall_list:
+            if walls.RECT.colliderect(other.RIGHT_RECT):
+                return True
+
+    def check_up(self, other):
+        for walls in self.wall_list:
+            if walls.RECT.colliderect(other.UP_RECT):
+                return True
+
+    def check_down(self, other):
+        for walls in self.wall_list:
+            if walls.RECT.colliderect(other.DOWN_RECT):
+                return True
 
     def player_left(self):
+        if self.check_left(self.player):
+            self.player.x -= 0
+            self.player.y = self.player.y
+        else:
+            self.player.x -= self.player.speed
+            self.player.y = self.player.y
         self.player.ix, self.player.iy = self.player.player_facing_left[0]
-        for room in self.gate_list:
-            if room.RECT.collidepoint((self.player.x+(self.player.width * .5)) - 1,
-            self.player.y+(self.player.width * .5)):
-                self.player.x -= self.player.speed
-                self.player.y = self.player.y
         self.player.player_facing_left.append(self.player.player_facing_left.pop(0))
         self.swords_done()
 
     def player_right(self):
+        if self.check_right(self.player):
+            self.player.x -= 0
+            self.player.y = self.player.y
+        else:
+            self.player.x += self.player.speed
+            self.player.y = self.player.y
         self.player.ix, self.player.iy = self.player.player_facing_right[0]
-        for room in self.gate_list:
-            if room.RECT.collidepoint((self.player.x+(self.player.width * .5)) + 1,
-            self.player.y+(self.player.width * .5)):
-                self.player.x += self.player.speed
-                self.player.y = self.player.y
         self.player.player_facing_right.append(self.player.player_facing_right.pop(0))
         self.swords_done()
 
     def player_up(self):
+        if self.check_up(self.player):
+            self.player.x -= 0
+            self.player.y = self.player.y
+        else:
+            self.player.x = self.player.x
+            self.player.y -= self.player.speed
         self.player.ix, self.player.iy = self.player.player_facing_up[0]
-        for room in self.gate_list:
-            if room.RECT.collidepoint(self.player.x+(self.player.width * .5),
-            (self.player.y+(self.player.width * .5)) - 1):
-                self.player.x = self.player.x
-                self.player.y -= self.player.speed
         self.player.player_facing_up.append(self.player.player_facing_up.pop(0))
         self.swords_done()
 
 
     def player_down(self):
+        if self.check_down(self.player):
+            self.player.x -= 0
+            self.player.y = self.player.y
+        else:
+            self.player.x = self.player.x
+            self.player.y += self.player.speed
         self.player.ix, self.player.iy = self.player.player_facing_down[0]
-        for room in self.gate_list:
-            if room.RECT.collidepoint(self.player.x+(self.player.width * .5),
-            (self.player.y+(self.player.width * .5)) + 1):
-                self.player.x = self.player.x
-                self.player.y += self.player.speed
         self.player.player_facing_down.append(self.player.player_facing_down.pop(0))
         self.swords_done()
 
@@ -410,23 +523,34 @@ class Game():
     def rooms(self):
         for value in self.maze:
             x, y, width, height = value
-            self.room = Maze(x, y, width, height, self.color)
+            self.room = Maze(x, y, width, height, c.WHITE)
             self.maze_list.append(self.room)
 
-    def gates(self):
-        for value in self.gate:
-            x, y, width, height = value
-            self.door = Maze(x, y, width, height, c.WHITE)
-            self.gate_list.append(self.door)
-
-    def move_maze(self):
+    def check_wall(self, door):
         for room in self.maze_list:
-            room.x += 1
+            if room.RECT.colliderect(door.RECT):
+                return True
+
+    def gates(self):
+        for value in self.aMaze.grid:
+            x, y = value
+            self.wall = Maze(x-5, y-5, self.wall_cell, self.wall_width, c.wall)
+            self.wall2 = Maze(x-5, y, self.wall_width, self.wall_cell, c.wall)
+            if not self.check_wall(self.wall):
+                self.wall_list.append(self.wall)
+            if not self.check_wall(self.wall2):
+                self.wall_list.append(self.wall2)
+        self.wall3 = Maze(600, 0, self.wall_width, 605, c.wall)
+        self.wall4 = Maze(0, 600, 605, self.wall_width, c.wall)
+        self.wall_list.append(self.wall3)
+        self.wall_list.append(self.wall4)
+
 
     def set_target_imagex(self):
         x, y = self.target.x, self.target.y
-        if (x, y - self.wall) in self.aMaze.andron:
-            self.target.ix = -35
+        for wall in self.wall_list:
+            if not wall.RECT.collidepoint(x+3, y+3):
+                self.target.ix = -35
     # pops level at index 0 in levels and puts it at the end
     # of the list. this is how looping through levels
 
@@ -469,9 +593,10 @@ class Game():
         else:
             self.ready = False
     def update_screen(self):
-        self.screen.update_screen(self.gate_list, self.maze_list, self.player,
+        self.screen.update_screen(self.wall_list, self.maze_list, self.player,
                                   self.target, self.sword_list, self.enemy_sword_list,
                                   self.level, self.score, self.lives, self.cooldown,
                                   self.ability1, self.ability2, self.timer, self.PAUSED,
-                                  self.enemy_list, self.enemy_chasing_list)
+                                  self.enemy_list, self.enemy_chasing_list, self.vanish_list,
+                                  self.lightning_list)
 

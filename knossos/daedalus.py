@@ -17,12 +17,12 @@ class daeda():
         self.deadend = []
         self.enemy_loc = []
         self.farCell = []
-        self.andron = [(5+(self.cell * .5),  5+(self.cell * .5), 1, 1)]
         self.flag = 0
 
         self.create_grid()
         self.daedalus()
         self.endLoc()
+
 
     # Grid---------------------------------------------------------
     def create_grid(self):
@@ -100,25 +100,20 @@ class daeda():
     def push_left(self, x, y):
         x, y = (x - self.wall, y)
         self.mazemap.append((x, y, self.wall_cell, self.cell))
-        self.andron.append(((x+(self.cell * .5))-self.cell, y+(self.cell * .5), self.wall_cell, 1))
 
     def push_right(self, x, y):
         self.mazemap.append((x, y, self.wall_cell, self.cell))
-        self.andron.append((x+(self.cell * .5), y+(self.cell * .5), self.wall_cell, 1))
 
     def push_up(self, x, y):
         x, y = (x, y - self.wall)
         self.mazemap.append((x, y, self.cell, self.cell + self.wall))
-        self.andron.append((x+(self.cell * .5), (y+(self.cell * .5))-self.cell, 1, self.wall_cell))
 
     def push_down(self, x, y):
         self.mazemap.append((x, y, self.cell, self.cell + self.wall))
-        self.andron.append((x+(self.cell * .5), y+(self.cell * .5), 1, self.wall_cell))
 
     def backtracking(self, x, y):
         self.mazemap.append((x, y, self.cell, self.cell))
         self.deadend.append((x, y))
-        self.andron.append((x+(self.cell * .5), y+(self.cell * .5), 1, 1))
 
     # End location---------------------------------------------------------------------------------------------------------
 
@@ -141,9 +136,4 @@ class daeda():
             else:
                 longPath.clear()
 
-    # Debugging-------------------------------------------------------------------------------------------------------------
-    def renderAndron(self, surface):
-        for value in self.andron:
-            x, y = value
-            pygame.draw.rect(self.PLAYER_SURF, c.BLACK,
-                             pygame.Rect(x, y, 10, 10))
+

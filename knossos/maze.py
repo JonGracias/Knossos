@@ -1,4 +1,5 @@
 import pygame
+from knossos.color import colors as c
 
 class Maze():
     def __init__(self, x, y, width, height, color):

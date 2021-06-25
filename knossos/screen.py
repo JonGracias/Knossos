@@ -34,6 +34,17 @@ class Screen():
     def draw_player(self, player):
         player.draw_sprite(self.maze_screen)
 
+    def draw_player_rects(self, player):
+        player.drawrects(self.maze_screen)
+
+    def draw_list_rects(self, list):
+        for items in list:
+            items.drawrects(self.maze_screen)
+
+    def draw_effects(self, effects):
+        for effect in effects:
+            effect.draw_sprite(self.maze_screen)
+
     def refresh_maze_screen(self):
         self.screen.blit(self.maze_screen, (5, 60))
         self.maze_screen.fill(c.BLACK)
@@ -64,18 +75,30 @@ class Screen():
             self.screen.blit(s, (10, 35))
             self.screen.blit(PAUSED_SURF, [267, 320])
 
-    def update_screen(self,gate, maze, player, target, swords, enemy_swords,
-                      level, score, lives, cooldown, ability1, ability2, timer, pause, enemies, chasing_enemies):
+    def update_screen(self, wall, maze, player, target, swords, enemy_swords,
+                      level, score, lives, cooldown, ability1, ability2, timer, pause,
+                    enemies, chasing_enemies, vanish, lightning):
         self.refresh_background()
         self.refresh_maze_screen()
         self.draw_maze(maze)
-        self.draw_maze(gate)
+        self.draw_maze(wall)
         self.draw_enemies(enemies)
         self.draw_enemies(chasing_enemies)
         self.draw_player(player)
+
+        self.draw_player_rects(player)
+        self.draw_list_rects(enemies)
+        self.draw_list_rects(chasing_enemies)
+        self.draw_list_rects(lightning)
+        self.draw_list_rects(swords)
+        self.draw_list_rects(enemy_swords)
+        self.draw_list_rects(vanish)
+
         self.draw_swords(swords)
         self.draw_swords(enemy_swords)
         self.draw_player(target)
+        self.draw_effects(vanish)
+        self.draw_effects(lightning)
         self.draw_level(level)
         self.draw_score(score)
         self.draw_lives(lives)
