@@ -74,6 +74,7 @@ pip install pygame
 
 # Run the game
 python main.py
+```
 
 ---
 
