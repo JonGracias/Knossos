@@ -74,17 +74,6 @@ pip install pygame
 
 # Run the game
 python main.py
-```
-
----
-
-## 🖼️ Screenshots
-
-*(Add your screenshots here once available)*
-
-| Maze Generation                         | Gameplay                                | Encounter                                     |
-| --------------------------------------- | --------------------------------------- | --------------------------------------------- |
-| ![Maze](resources/screenshots/maze.png) | ![Play](resources/screenshots/game.png) | ![Minotaur](resources/screenshots/battle.png) |
 
 ---
 
