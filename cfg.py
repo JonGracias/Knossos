@@ -30,7 +30,7 @@ FPS = 30
 FPSCLOCK = pygame.time.Clock()
 
 # Grid information----------------------------------------------------------------------------------------------
-cellNum = 10
+cellNum = 50
 cellSize = int(BGSIZE / cellNum ) - WALLSIZE
 xs, ys = 0, 0
 xe, ye = 0, 0

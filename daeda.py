@@ -31,7 +31,7 @@ def daedalus(DISPLAYSURF):                                                      
         if len(cfg.visited) != len(cfg.grid):                                       
             cfg.stack.append((x, y))                                                # records moves and cells visited
             cfg.visited.append((x, y))
-            while len(cfg.stack) > 0:                                               # only runs when stack is not empty if all moves not possible stak will pop() until it reaches 0
+            while len(cfg.stack) > 0:                                               # only runs when stack is not empty if all moves not possible stack will pop() until it reaches 0
                 time.sleep(0)
                 cell = []                                                           # empties cells list
                 if (x + cfg.cellSize + cfg.WALLSIZE, y
